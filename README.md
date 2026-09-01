@@ -95,7 +95,8 @@ Key defensive themes arising from this assessment include privileged account tie
 
 A complete, narrative-style Red Team Assessment Report (Executive Summary, full attack lifecycle, findings, and remediation) is available at:
 
-[INSERT LINK TO REPORT PDF/DOCX IN REPO]
+[`report/Indepth-Report.docx`](report/Indepth-Report.docx)
+
 
 ## Disclaimer
 

