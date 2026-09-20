@@ -24,8 +24,8 @@ Reconnaissance was performed in two stages: network/service discovery, and Activ
 
 | Host | IP Address | OS | Role | Discovered Services | Notes |
 |---|---|---|---|---|---|
-| WIN-DC | [INSERT WINDOWS SERVER IP] | Windows Server 2019 | Domain Controller | [INSERT — e.g., 53, 88, 135, 389, 445, 3268, per actual nmap output] | [INSERT] |
-| WIN11-PC | [INSERT WINDOWS 11 IP] | Windows 11 | Workstation | [INSERT] | [INSERT] |
+| WIN-DC | WINDOWS SERVER IP | Windows Server 2019 | Domain Controller | 53, 88, 135, 389, 445, 3268, per actual nmap output | [INSERT] |
+| WIN11-PC | WINDOWS 11 IP | Windows 11 | Workstation |   |
 
 ## Service Enumeration
 
