@@ -18,13 +18,13 @@ Reconnaissance was performed in two stages: network/service discovery, and Activ
 | Tool | Purpose | Target | Security Significance |
 |---|---|---|---|
 | `nmap` | Network and service discovery / port scanning | Windows Server 2019 (Domain Controller) | Confirms live hosts and identifies exposed services (e.g., Kerberos, LDAP, SMB) that fingerprint the host as a Domain Controller and define the attack surface |
-| [INSERT — additional enumeration tools actually used, e.g., NetExec/CrackMapExec, Impacket enumeration scripts] | [INSERT] | [INSERT] | [INSERT] |
+| [INSERT — additional enumeration tools actually used, e.g., NetExec/CrackMapExec, Impacket enumeration scripts] 
 
 ## Network Discovery
 
 | Host | IP Address | OS | Role | Discovered Services | Notes |
 |---|---|---|---|---|---|
-| WIN-DC | WINDOWS SERVER IP | Windows Server 2019 | Domain Controller | 53, 88, 135, 389, 445, 3268, per actual nmap output | [INSERT] |
+| WIN-DC | WINDOWS SERVER IP | Windows Server 2019 | Domain Controller | 53, 88, 135, 389, 445, 3268, per actual nmap output |  |
 
 
 ## Service Enumeration
@@ -68,3 +68,6 @@ Reconnaissance confirmed the presence and role of the Domain Controller (WIN-DC)
 ## Security Significance
 
 Even before any exploitation occurs, reconnaissance demonstrates that a Domain Controller is often trivially identifiable on an internal network purely from its default port footprint (Kerberos on 88, LDAP on 389, SMB on 445, etc.). This is a normal and largely unavoidable characteristic of how Active Directory functions, which is why internal network segmentation, monitoring for anomalous internal scanning, and hardening of exposed AD services are important compensating controls rather than relying on "security through obscurity" of the Domain Controller's identity.
+
+## Evidence
+[`evidence/nmap-dc.png`](../evidence/nmap-dc.png)
