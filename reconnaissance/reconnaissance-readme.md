@@ -25,27 +25,45 @@ Reconnaissance was performed in two stages: network/service discovery, and Activ
 | Host | IP Address | OS | Role | Discovered Services | Notes |
 |---|---|---|---|---|---|
 | WIN-DC | WINDOWS SERVER IP | Windows Server 2019 | Domain Controller | 53, 88, 135, 389, 445, 3268, per actual nmap output | [INSERT] |
-| WIN11-PC | WINDOWS 11 IP | Windows 11 | Workstation |   |
+
 
 ## Service Enumeration
 
-[INSERT: document only services actually confirmed via nmap/enumeration output — e.g., confirmed open ports and identified service versions from the Domain Controller scan]
 
-## Active Directory Enumeration
+## Target System Information
+* **IP Address:** 192.168.56.105
+* **Host Name:** WIN-DC
+* **Domain Name:** LAB.local0.
+* **Active Directory Site:** Default-First-Site-Name
+* **Operating System:** Microsoft Windows
 
-[INSERT: document whether unauthenticated and/or authenticated AD enumeration was performed, and what was actually discovered — domain name, user accounts enumerated, groups, computers, and any notable account configurations identified (e.g., accounts with SPNs, accounts with pre-authentication disabled). Do not include actual passwords or reusable credential material.]
+
+## Confirmed Open Ports and Service Versions
+
+| Port / Protocol | State | Service | Version / Details |
+| :--- | :--- | :--- | :--- |
+| **53 / tcp** | Open | domain | Simple DNS Plus |
+| **88 / tcp** | Open | kerberos-sec | Microsoft Windows Kerberos (Server time: 2026-07-16 13:15:17Z) |
+| **135 / tcp** | Open | msrpc | Microsoft Windows RPC |
+| **139 / tcp** | Open | netbios-ssn | Microsoft Windows netbios-ssn |
+| **389 / tcp** | Open | ldap | Microsoft Windows Active Directory LDAP |
+| **445 / tcp** | Open | microsoft-ds? | *Version not explicitly identified* |
+| **464 / tcp** | Open | kpasswd5? | *Version not explicitly identified* |
+| **593 / tcp** | Open | ncacn_http | Microsoft Windows RPC over HTTP 1.0 |
+| **636 / tcp** | Open | ssl/ldap | Microsoft Windows Active Directory LDAP |
+| **3268 / tcp** | Open | ldap | Microsoft Windows Active Directory LDAP |
+| **3269 / tcp** | Open | ssl/ldap | Microsoft Windows Active Directory LDAP |
+| **5985 / tcp** | Open | http | Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP) |
+
+## Scan Summary
+* **Filtered Ports:** Filtered TCP ports (no-response)
+* **Total Time:** Scanned 1 IP address in 51.41 seconds
+
+
 
 ## Findings From Reconnaissance
 
-Reconnaissance confirmed the presence and role of the Domain Controller (WIN-DC) within the environment, providing the fingerprint (open Kerberos/LDAP/SMB ports) needed to identify it as the Active Directory server and primary high-value target for the remainder of the assessment. [INSERT: any additional specific findings that directly informed subsequent attack-chain decisions.]
-
-## Evidence
-
-[INSERT SCREENSHOT]
-
-[INSERT COMMAND OUTPUT]
-
-[INSERT REFERENCE TO EVIDENCE FILE — e.g., `evidence/recon/nmap-dc-scan.txt`]
+Reconnaissance confirmed the presence and role of the Domain Controller (WIN-DC) within the environment, providing the fingerprint (open Kerberos/LDAP/SMB ports) needed to identify it as the Active Directory server and primary high-value target for the remainder of the assessment. 
 
 ## Security Significance
 
